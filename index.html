@@ -16,7 +16,7 @@ and open the template in the editor.
         <script src="https://www.pidder.de/pidcrypt/javascripts/prng4.js"></script><!--needed for rsa key generation-->
         <script src="https://www.pidder.de/pidcrypt/javascripts/rsa.js"></script><!--needed for rsa en-/decryption-->
         <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script><!-- used for my quick code -->
-	<script src="http://backbonejs.org/test/vendor/json2.js"></script>
+        <script src="http://backbonejs.org/test/vendor/json2.js"></script>
         <script type="text/javascript">
             jQuery(document).ready(function() {
                 var public_key = '-----BEGIN PUBLIC KEY-----\n\
@@ -107,7 +107,7 @@ JLv4qxU9hqu6NtJ+8QIDAQAB\n\
                 }
 
                 // This is new code written by William Lightning <kassah@gmail.com>
-                jQuery('#theForm').on('submit',function() {
+                jQuery('#theForm').on('submit', function() {
                     var user = this.user.value;
                     var pass = this.pass.value;
                     jQuery(this.user).val("");
@@ -116,7 +116,7 @@ JLv4qxU9hqu6NtJ+8QIDAQAB\n\
                     jQuery.getJSON("input.php", function(indata) {
                         data = {};
                         // data.time = indata.time;
-			data.time = parseInt(indata.time);
+                        data.time = parseInt(indata.time);
                         data.ipaddr = indata.ipaddr;
                         data.user = user;
                         data.pass = pass;
@@ -125,7 +125,7 @@ JLv4qxU9hqu6NtJ+8QIDAQAB\n\
                         // Encrypt the JSON
                         var inputval = encryptval(jsonval);
                         jQuery.post('auth.php', {input: inputval}, function(datastuff) {
-				jQuery('#message').text(datastuff);
+                            jQuery('#message').text(datastuff);
                         });
                     });
                     return false;
