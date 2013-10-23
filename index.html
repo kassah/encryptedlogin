@@ -1,146 +1,157 @@
-<!--
-To change this template, choose Tools | Templates
-and open the template in the editor.
--->
 <!DOCTYPE html>
 <html debug=true>
-    <head>
-        <title></title>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>
-        <script src="https://www.pidder.de/pidcrypt/javascripts/pidcrypt.js"></script>
-        <script src="https://www.pidder.de/pidcrypt/javascripts/pidcrypt_util.js"></script>
-        <script src="https://www.pidder.de/pidcrypt/javascripts/asn1.js"></script><!--needed for parsing decrypted rsa certificate-->
-        <script src="https://www.pidder.de/pidcrypt/javascripts/jsbn.js"></script><!--needed for rsa math operations-->
-        <script src="https://www.pidder.de/pidcrypt/javascripts/rng.js"></script><!--needed for rsa key generation-->
-        <script src="https://www.pidder.de/pidcrypt/javascripts/prng4.js"></script><!--needed for rsa key generation-->
-        <script src="https://www.pidder.de/pidcrypt/javascripts/rsa.js"></script><!--needed for rsa en-/decryption-->
-        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script><!-- used for my quick code -->
-	<script src="http://backbonejs.org/test/vendor/json2.js"></script>
-        <script type="text/javascript">
-            jQuery(document).ready(function() {
-                var public_key = '-----BEGIN PUBLIC KEY-----\n\
+<head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>
+    <script src="https://www.pidder.de/pidcrypt/javascripts/pidcrypt.js"></script>
+    <script src="https://www.pidder.de/pidcrypt/javascripts/pidcrypt_util.js"></script>
+    <script src="https://www.pidder.de/pidcrypt/javascripts/asn1.js"></script>
+    <!--needed for parsing decrypted rsa certificate-->
+    <script src="https://www.pidder.de/pidcrypt/javascripts/jsbn.js"></script>
+    <!--needed for rsa math operations-->
+    <script src="https://www.pidder.de/pidcrypt/javascripts/rng.js"></script>
+    <!--needed for rsa key generation-->
+    <script src="https://www.pidder.de/pidcrypt/javascripts/prng4.js"></script>
+    <!--needed for rsa key generation-->
+    <script src="https://www.pidder.de/pidcrypt/javascripts/rsa.js"></script>
+    <!--needed for rsa en-/decryption-->
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <!-- used for my quick code -->
+    <script src="http://backbonejs.org/test/vendor/json2.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var public_key = '-----BEGIN PUBLIC KEY-----\n\
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDVd/gb2ORdLI7nTRHJR8C5EHs4\n\
 RkRBcQuQdHkZ6eq0xnV2f0hkWC8h0mYH/bmelb5ribwulMwzFkuktXoufqzoft6Q\n\
 6jLQRnkNJGRP6yA4bXqXfKYj1yeMusIPyIb3CTJT/gfZ40oli6szwu4DoFs66IZp\n\
 JLv4qxU9hqu6NtJ+8QIDAQAB\n\
 -----END PUBLIC KEY-----';
 
-                // The following two functions are adapted from source code on 
-                // https://www.pidder.de/pidcrypt/?page=demo_rsa-encryption
-                function certParser(cert) {
-                    var lines = cert.split('\n');
-                    var read = false;
-                    var b64 = false;
-                    var end = false;
-                    var flag = '';
-                    var retObj = {};
-                    retObj.info = '';
-                    retObj.salt = '';
-                    retObj.iv;
-                    retObj.b64 = '';
-                    retObj.aes = false;
-                    retObj.mode = '';
-                    retObj.bits = 0;
-                    for (var i = 0; i < lines.length; i++) {
-                        flag = lines[i].substr(0, 9);
-                        if (i == 1 && flag != 'Proc-Type' && flag.indexOf('M') == 0)//unencrypted cert?
-                            b64 = true;
-                        switch (flag) {
-                            case '-----BEGI':
-                                read = true;
-                                break;
-                            case 'Proc-Type':
-                                if (read)
-                                    retObj.info = lines[i];
-                                break;
-                            case 'DEK-Info:':
-                                if (read) {
-                                    var tmp = lines[i].split(',');
-                                    var dek = tmp[0].split(': ');
-                                    var aes = dek[1].split('-');
-                                    retObj.aes = (aes[0] == 'AES') ? true : false;
-                                    retObj.mode = aes[2];
-                                    retObj.bits = parseInt(aes[1]);
-                                    retObj.salt = tmp[1].substr(0, 16);
-                                    retObj.iv = tmp[1];
-                                }
-                                break;
-                            case '':
-                                if (read)
-                                    b64 = true;
-                                break;
-                            case '-----END ':
-                                if (read) {
-                                    b64 = false;
-                                    read = false;
-                                }
-                                break;
-                            default:
-                                if (read && b64)
-                                    retObj.b64 += pidCryptUtil.stripLineFeeds(lines[i]);
-                        }
+            // The following two functions are adapted from source code on
+            // https://www.pidder.de/pidcrypt/?page=demo_rsa-encryption
+            function certParser(cert) {
+                var lines = cert.split('\n');
+                var read = false;
+                var b64 = false;
+                var end = false;
+                var flag = '';
+                var retObj = {};
+                retObj.info = '';
+                retObj.salt = '';
+                retObj.iv = 0;
+                retObj.b64 = '';
+                retObj.aes = false;
+                retObj.mode = '';
+                retObj.bits = 0;
+                for (var i = 0; i < lines.length; i++) {
+                    flag = lines[i].substr(0, 9);
+                    if (i == 1 && flag != 'Proc-Type' && flag.indexOf('M') == 0) { // unencrypted cert?
+                        b64 = true;
                     }
-                    return retObj;
+                    switch (flag) {
+                        case '-----BEGI':
+                            read = true;
+                            break;
+                        case 'Proc-Type':
+                            if (read) {
+                                retObj.info = lines[i];
+                            }
+                            break;
+                        case 'DEK-Info:':
+                            if (read) {
+                                var tmp = lines[i].split(',');
+                                var dek = tmp[0].split(': ');
+                                var aes = dek[1].split('-');
+                                retObj.aes = !!((aes[0] == 'AES'));
+                                retObj.mode = aes[2];
+                                retObj.bits = parseInt(aes[1]);
+                                retObj.salt = tmp[1].substr(0, 16);
+                                retObj.iv = tmp[1];
+                            }
+                            break;
+                        case '':
+                            if (read)
+                                b64 = true;
+                            break;
+                        case '-----END ':
+                            if (read) {
+                                b64 = false;
+                                read = false;
+                            }
+                            break;
+                        default:
+                            if (read && b64)
+                                retObj.b64 += pidCryptUtil.stripLineFeeds(lines[i]);
+                    }
+                }
+                return retObj;
+            }
+
+            function encryptVal(val) {
+                var params = {};
+                var result = '';
+                params = certParser(public_key);
+
+                if (params.b64) {
+                    var key = pidCryptUtil.decodeBase64(params.b64);
+                    //new RSA instance
+                    var rsa = new pidCrypt.RSA();
+                    //RSA encryption
+                    //ASN1 parsing
+                    var asn = pidCrypt.ASN1.decode(pidCryptUtil.toByteArray(key));
+                    var tree = asn.toHexTree();
+                    //setting the public key for encryption
+                    rsa.setPublicKeyFromASN(tree);
+                    // var t = new Date();  // timer
+                    crypted = rsa.encrypt(val);
+                    result = pidCryptUtil.fragment(pidCryptUtil.encodeBase64(pidCryptUtil.convertFromHex(crypted)), 64);
+                } else {
+                    alert('Could not find public key.');
                 }
 
-                function encryptval(val) {
-                    var params = {};
-                    var result = '';
-                    params = certParser(public_key);
-                    if (params.b64) {
-                        var key = pidCryptUtil.decodeBase64(params.b64);
-                        //new RSA instance
-                        var rsa = new pidCrypt.RSA();
-                        //RSA encryption
-                        //ASN1 parsing
-                        var asn = pidCrypt.ASN1.decode(pidCryptUtil.toByteArray(key));
-                        var tree = asn.toHexTree();
-                        //setting the public key for encryption
-                        rsa.setPublicKeyFromASN(tree);
-                        // var t = new Date();  // timer
-                        crypted = rsa.encrypt(val);
-                        result = pidCryptUtil.fragment(pidCryptUtil.encodeBase64(pidCryptUtil.convertFromHex(crypted)), 64);
-                    } else
-                        alert('Could not find public key.');
-                    return result;
-                }
+                return result;
+            }
 
-                // This is new code written by William Lightning <kassah@gmail.com>
-                jQuery('#theForm').on('submit',function() {
-                    var user = this.user.value;
-                    var pass = this.pass.value;
-                    jQuery(this.user).val("");
-                    jQuery(this.pass).val("");
+            // This is new code written by William Lightning <kassah@gmail.com>
+            $('#theForm').on('submit', function () {
+                var user = this.user.value;
+                var pass = this.pass.value;
+                $(this.user).val("");
+                $(this.pass).val("");
 
-                    jQuery.getJSON("input.php", function(indata) {
-                        data = {};
-                        // data.time = indata.time;
-			data.time = parseInt(indata.time);
-                        data.ipaddr = indata.ipaddr;
-                        data.user = user;
-                        data.pass = pass;
-                        // JSON Encode the Parameters
-                        var jsonval = JSON.stringify(data);
-                        // Encrypt the JSON
-                        var inputval = encryptval(jsonval);
-                        jQuery.post('auth.php', {input: inputval}, function(datastuff) {
-				jQuery('#message').text(datastuff);
-                        });
+                $.getJSON("input.php", function (indata) {
+                    data = {};
+                    data.time = indata.time;
+                    data.ipaddr = indata.ipaddr;
+                    data.user = user;
+                    data.pass = pass;
+                    // JSON Encode the Parameters
+                    var jsonval = JSON.stringify(data);
+
+                    // Encrypt the JSON
+                    var inputval = encryptVal(jsonval);
+                    $.post('auth.php', {input: inputval}, function (datastuff) {
+                        $('#message').text(datastuff);
                     });
-                    return false;
                 });
+
+                return false;
             });
-        </script>
-    </head>
-    <body>
-        <div>
-            <p id="message"></p>
-            <form id="theForm" method="post" name="theForm" action="auth.php">
-                <input id="user" name="user" type="text" value="" /><br />
-                <input id="pass" name="pass" type="password" value="" /><br />
-                <input name="submit" value="Submit" type="submit" />
-            </form>
-        </div>
-    </body>
+        });
+    </script>
+</head>
+<body>
+<div>
+    <p id="message"></p>
+
+    <form id="theForm" method="post" name="theForm" action="auth.php">
+        <label for="user">Username</label>
+        <input id="user" name="user" type="text" value=""/><br/>
+        <label for="pass">Password</label>
+        <input id="pass" name="pass" type="password" value=""/><br/>
+        <input name="submit" value="Submit" type="submit"/>
+    </form>
+</div>
+</body>
 </html>
