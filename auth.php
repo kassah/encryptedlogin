@@ -22,16 +22,19 @@ gnDfMoRERMIPElZ6x6kCQQCP45DVojZduLRuhJtzBkQXJ4pCsGC8mrHXF3M+hJV+
 $decrypted = '';
 openssl_private_decrypt(base64_decode($input), $decrypted, $privateKey);
 $data = json_decode(base64_decode($decrypted), true);
-
+if (!isset($data['time'])) {
+    die("No time paramter in decoded message.");
+}
+$now = time();
 if (!is_numeric($data['time'])) {
     die("Time should be numeric!");
-} elseif ($data['time'] + 60*5 < time()) { // Timestamp should be within 5 minutes. This helps with replay attacks, but doesn't eliminate.
-    die("Timestamp on login should be within the last 5 minutes.");
+} elseif ($data['time'] + 60*5 < $now) { // Timestamp should be within 5 minutes. This helps with replay attacks, but doesn't eliminate.
+    die("Timestamp on login should be within the last 5 minutes. (stamp: ".$data['time']." now: ".$now.")");
 }
 if ($data['ipaddr'] != $_SERVER['REMOTE_ADDR']) {
     die("IP Login recieved from is not the IP the login provided. Try again?");
 }
 
-echo "Success! We got an encrypted login params of user: ".$data['user']." pass: ".$data['pass'];
+echo "Success! We got an encrypted login params of user: ".$data['user']." pass: ".$data['pass']." Timestamps: (stamp: ".$data['time']." now: ".$now.")";
 
 ?>

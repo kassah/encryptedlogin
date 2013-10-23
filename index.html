@@ -3,10 +3,11 @@ To change this template, choose Tools | Templates
 and open the template in the editor.
 -->
 <!DOCTYPE html>
-<html>
+<html debug=true>
     <head>
         <title></title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>
         <script src="https://www.pidder.de/pidcrypt/javascripts/pidcrypt.js"></script>
         <script src="https://www.pidder.de/pidcrypt/javascripts/pidcrypt_util.js"></script>
         <script src="https://www.pidder.de/pidcrypt/javascripts/asn1.js"></script><!--needed for parsing decrypted rsa certificate-->
@@ -15,6 +16,7 @@ and open the template in the editor.
         <script src="https://www.pidder.de/pidcrypt/javascripts/prng4.js"></script><!--needed for rsa key generation-->
         <script src="https://www.pidder.de/pidcrypt/javascripts/rsa.js"></script><!--needed for rsa en-/decryption-->
         <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script><!-- used for my quick code -->
+	<script src="http://backbonejs.org/test/vendor/json2.js"></script>
         <script type="text/javascript">
             jQuery(document).ready(function() {
                 var public_key = '-----BEGIN PUBLIC KEY-----\n\
@@ -105,28 +107,28 @@ JLv4qxU9hqu6NtJ+8QIDAQAB\n\
                 }
 
                 // This is new code written by William Lightning <kassah@gmail.com>
-                jQuery('#theForm').submit(function() {
-                    event.preventDefault();
-
+                jQuery('#theForm').on('submit',function() {
                     var user = this.user.value;
                     var pass = this.pass.value;
                     jQuery(this.user).val("");
                     jQuery(this.pass).val("");
 
-                    $.getJSON("input.php", function(indata) {
+                    jQuery.getJSON("input.php", function(indata) {
                         data = {};
-                        data.time = indata.time;
+                        // data.time = indata.time;
+			data.time = parseInt(indata.time);
                         data.ipaddr = indata.ipaddr;
                         data.user = user;
                         data.pass = pass;
                         // JSON Encode the Parameters
-                        var json = JSON.stringify(data);
+                        var jsonval = JSON.stringify(data);
                         // Encrypt the JSON
-                        var input = encryptval(json);
-                        $.post('auth.php', {input: input}).done(function(datastuff) {
-                            jQuery('#message').text(datastuff);
+                        var inputval = encryptval(jsonval);
+                        jQuery.post('auth.php', {input: inputval}, function(datastuff) {
+				jQuery('#message').text(datastuff);
                         });
                     });
+                    return false;
                 });
             });
         </script>
